@@ -1,116 +1,191 @@
-<div id="auth-card">
-    <h2 style="color: white; text-shadow: 0 2px 4px rgba(0,0,0,0.1);">KERO AI</h2>
-    <p style="color: white; font-size: 10px; letter-spacing: 2px; margin-bottom: 25px; opacity: 0.8;">LIQUID CLOUD v14.0</p>
-    
-    <input type="text" id="username" class="auth-input" placeholder="Kullanıcı Adı">
-    
-    <input type="password" id="pass" class="auth-input" placeholder="Şifre">
-    
-    <input type="password" id="pass-again" class="auth-input" placeholder="Şifreyi Tekrar Yaz" style="display: none;">
-    
-    <button id="auth-btn" class="btn-liquid" onclick="handleAuth()">GİRİŞ YAP</button>
-    
-    <div style="margin-top:15px; color:white; font-size:11px; cursor:pointer; font-weight: bold;" onclick="toggleRegMode()">
-        <span id="mode-text">Hesabın yok mu? Kayıt Ol</span>
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>KERO AI // White Cloud</title>
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+    <style>
+        :root { 
+            --bg: #f9fafb; /* Çok hafif, temiz bir gri-beyaz */
+            --primary: #ffffff; /* Bembeyaz alanlar */
+            --accent: #111827; /* Kontrast için koyu gri/siyah (Yazılar için) */
+            --glass: rgba(255, 255, 255, 0.6); /* Şeffaf cam etkisi */
+            --border: rgba(17, 24, 39, 0.1); /* Çok hafif, belli belirsiz bir gri çizgi */
+            --shadow: 0 10px 30px rgba(17, 24, 39, 0.03); /* Çok yumuşak gölge */
+        }
+
+        body, html { 
+            margin: 0; padding: 0; height: 100vh; width: 100%;
+            font-family: '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', system-ui, sans-serif;
+            background-color: var(--bg); color: var(--accent);
+            display: flex; align-items: center; justify-content: center; overflow: hidden;
+        }
+
+        /* --- BEYAZ LOGIN PANELI --- */
+        #auth-card {
+            background: var(--primary); 
+            border: 1px solid var(--border); border-radius: 32px; padding: 50px 40px;
+            width: 320px; text-align: center; box-shadow: var(--shadow);
+            transition: 0.3s;
+        }
+        #auth-card:hover { transform: translateY(-5px); box-shadow: 0 15px 40px rgba(17, 24, 39, 0.06); }
+
+        .auth-input {
+            width: 100%; padding: 16px; border-radius: 16px; border: 1px solid var(--border);
+            background: var(--bg); color: var(--accent); font-weight: 500; font-size: 14px;
+            margin-bottom: 14px; outline: none; box-sizing: border-box; transition: 0.3s;
+        }
+        .auth-input:focus { border-color: #111827; background: #ffffff; }
+
+        .btn-liquid {
+            width: 100%; padding: 16px; border-radius: 16px; border: none;
+            background: #111827; color: #ffffff; font-weight: 700; font-size: 15px; cursor: pointer;
+            transition: 0.3s;
+        }
+        .btn-liquid:hover { background: #1f2937; }
+
+        /* --- MINIMAL CHAT ALANI --- */
+        #app-wrapper { display: none; width: 100%; height: 100vh; flex-direction: column; max-width: 900px; background: #ffffff; border-left: 1px solid var(--border); border-right: 1px solid var(--border); }
+        
+        #chat-view { flex-grow: 1; overflow-y: auto; padding: 30px; display: flex; flex-direction: column; gap: 20px; background: var(--bg); }
+        
+        .bubble { padding: 18px 22px; border-radius: 20px; color: var(--accent); max-width: 80%; line-height: 1.5; font-size: 15px; border: 1px solid var(--border); }
+        .user { align-self: flex-end; background: #111827; color: #ffffff; border-bottom-right-radius: 4px; border: none; }
+        .ai { align-self: flex-start; background: var(--primary); border-bottom-left-radius: 4px; }
+
+        #input-area { padding: 25px; display: flex; gap: 15px; background: #ffffff; border-top: 1px solid var(--border); }
+        #input-area input { flex-grow: 1; padding: 16px; border-radius: 16px; border: 1px solid var(--border); outline: none; background: var(--bg); font-size: 15px; transition: 0.3s; }
+        #input-area input:focus { border-color: #111827; background: #ffffff; }
+
+        #input-area .btn-liquid { width: 100px; }
+    </style>
+</head>
+<body>
+
+    <div id="auth-card">
+        <h1 style="color: #111827; margin: 0 0 8px 0; font-size: 32px; font-weight: 800; letter-spacing: -1px;">KERO AI</h1>
+        <p style="color: #6b7280; font-size: 12px; font-weight: 500; letter-spacing: 1px; margin-bottom: 40px; opacity: 0.8;">WHITE LIQUID v19.0</p>
+        
+        <input type="text" id="username" class="auth-input" placeholder="Kullanıcı Adı">
+        <input type="password" id="pass" class="auth-input" placeholder="Şifre">
+        <input type="password" id="pass-confirm" class="auth-input" placeholder="Şifreyi Onayla" style="display: none;">
+        
+        <button id="auth-btn" class="btn-liquid" onclick="handleAuth()">GİRİŞ YAP</button>
+        
+        <div style="margin-top: 25px; color: #6b7280; font-size: 13px; cursor: pointer; font-weight: 600;" onclick="toggleMode()">
+            <span id="mode-text">Hesabın yok mu? Kayıt Ol</span>
+        </div>
     </div>
 
-    <a href="https://www.instagram.com/keroskidder/" target="_blank" class="key-btn">
-        🔑 Yardım / İletişim İçin Yaz Aga
-    </a>
-</div>
+    <div id="app-wrapper">
+        <header style="padding: 20px 30px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border);">
+            <b style="color: #111827; font-size: 22px; font-weight: 800; letter-spacing: -0.5px;">KERO CLOUD</b>
+            <button onclick="auth.signOut()" style="background: var(--bg); border: 1px solid var(--border); padding: 10px 18px; border-radius: 12px; color: #111827; cursor: pointer; font-weight: 700; font-size: 13px;">Çıkış</button>
+        </header>
+        <div id="chat-view"><div id="out"></div></div>
+        <div id="input-area">
+            <input type="text" id="msg" placeholder="Mesajını buraya yaz..." onkeydown="if(event.key==='Enter') send()">
+            <button class="btn-liquid" onclick="send()">OK</button>
+        </div>
+    </div>
 
-<script>
-    // Firebase Config (Önceki ayarlarınla aynı kalsın)
-    const firebaseConfig = {
-        apiKey: "AIzaSyCoS-_p1hw2Jvra5t-0KvbtZMuD7PtP1hk",
-        authDomain: "kero-ai.firebaseapp.com",
-        projectId: "kero-ai",
-        storageBucket: "kero-ai.firebasestorage.app",
-        messagingSenderId: "1083556550287",
-        appId: "1:1083556550287:web:XXXX" 
-    };
-
-    firebase.initializeApp(firebaseConfig);
-    const auth = firebase.auth();
-    const db = firebase.firestore();
-    const GROQ_KEY = "GSK_BURAYA_KEY_GELECEK"; 
-
-    let isReg = false;
-
-    // Kayıt Modu Switch
-    function toggleRegMode() {
-        isReg = !isReg;
-        const passAgain = document.getElementById('pass-again');
-        const authBtn = document.getElementById('auth-btn');
-        const modeText = document.getElementById('mode-text');
-
-        if(isReg) {
-            passAgain.style.display = "block";
-            authBtn.innerText = "KAYIT OL VE GİR";
-            modeText.innerText = "Zaten hesabın var mı? Giriş Yap";
-        } else {
-            passAgain.style.display = "none";
-            authBtn.innerText = "GİRİŞ YAP";
-            modeText.innerText = "Hesabın yok mu? Kayıt Ol";
-        }
-    }
-
-    async function handleAuth() {
-        const u = document.getElementById('username').value.trim();
-        const p1 = document.getElementById('pass').value;
-        const p2 = document.getElementById('pass-again').value;
+    <script>
+        // --- AYARLAR ---
         
-        if(!u || !p1) { alert("Doldur buraları aga!"); return; }
-        const email = u + "@kero.ai";
+        // Bu kısmı GitHub Actions otomatik dolduracak aga, sakın elinle yazma!
+        const GROQ_KEY = "REPLACE_WITH_GROQ_KEY"; 
 
-        if(isReg) {
-            // Şifre eşleşme kontrolü (Key kontrolü silindi)
-            if(p1 !== p2) {
-                alert("Şifreler uyuşmuyor aga!");
-                return;
+        const firebaseConfig = {
+            apiKey: "AIzaSyCoS-_p1hw2Jvra5t-0KvbtZMuD7PtP1hk",
+            authDomain: "kero-ai.firebaseapp.com",
+            projectId: "kero-ai",
+            storageBucket: "kero-ai.firebasestorage.app",
+            messagingSenderId: "1083556550287",
+            appId: "1:1083556550287:web:4ddf18cc4af77d2d1542fa"
+        };
+
+        // Firebase'i başlat (Compat yapısıyla devam ediyoruz)
+        firebase.initializeApp(firebaseConfig);
+        const auth = firebase.auth();
+        const db = firebase.firestore();
+        let isReg = false;
+
+        function toggleMode() {
+            isReg = !isReg;
+            document.getElementById('pass-confirm').style.display = isReg ? 'block' : 'none';
+            document.getElementById('auth-btn').innerText = isReg ? 'KAYIT OL' : 'GİRİŞ YAP';
+            document.getElementById('mode-text').innerText = isReg ? 'Zaten hesabın var mı? Giriş Yap' : 'Hesabın yok mu? Kayıt Ol';
+        }
+
+        async function handleAuth() {
+            const u = document.getElementById('username').value.trim();
+            const p1 = document.getElementById('pass').value;
+            const p2 = document.getElementById('pass-confirm').value;
+            if(!u || !p1) return alert("Boş bırakma aga!");
+            const email = u + "@kero.ai";
+
+            try {
+                if(isReg) {
+                    if(p1 !== p2) return alert("Şifreler uyuşmuyor!");
+                    await auth.createUserWithEmailAndPassword(email, p1);
+                    alert("Kayıt başarılı, buluta giriliyor...");
+                } else {
+                    await auth.signInWithEmailAndPassword(email, p1);
+                }
+            } catch(e) { alert("Hata: " + e.message); }
+        }
+
+        async function send() {
+            const i = document.getElementById('msg');
+            const t = i.value.trim();
+            if(!t) return;
+            i.value = "";
+
+            try {
+                await db.collection("messages").add({
+                    role: "user", content: t, timestamp: firebase.firestore.FieldValue.serverTimestamp()
+                });
+
+                const res = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+                    method: "POST",
+                    headers: { "Authorization": `Bearer ${GROQ_KEY}`, "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                        model: "llama-3.3-70b-versatile",
+                        messages: [{role: "system", content: "Sen Kerem'in asistanısın. Samimi bir tarzda cevap ver."}, {role: "user", content: t}]
+                    })
+                });
+                const data = await res.json();
+                if(data.choices) {
+                    await db.collection("messages").add({
+                        role: "assistant", content: data.choices[0].message.content, timestamp: firebase.firestore.FieldValue.serverTimestamp()
+                    });
+                }
+            } catch(e) { console.error(e); }
+        }
+
+        auth.onAuthStateChanged(user => {
+            if(user) {
+                document.getElementById('auth-card').style.display='none';
+                document.getElementById('app-wrapper').style.display='flex';
+                db.collection("messages").orderBy("timestamp", "asc").onSnapshot(snap => {
+                    const out = document.getElementById('out'); out.innerHTML = "";
+                    snap.forEach(doc => {
+                        const d = doc.data();
+                        if(d.content) {
+                            out.innerHTML += `<div class="bubble ${d.role==='user'?'user':'ai'}">${marked.parse(d.content)}</div>`;
+                        }
+                    });
+                    document.getElementById('chat-view').scrollTop = document.getElementById('chat-view').scrollHeight;
+                });
+            } else {
+                document.getElementById('auth-card').style.display='block';
+                document.getElementById('app-wrapper').style.display='none';
             }
-            try {
-                await auth.createUserWithEmailAndPassword(email, p1);
-                alert("Hoş geldin! Kayıt başarıyla tamamlandı.");
-            } catch(e) { alert("Kayıt Hatası: " + e.message); }
-        } else {
-            // Normal Giriş
-            try {
-                await auth.signInWithEmailAndPassword(email, p1);
-            } catch(e) { alert("Hatalı kullanıcı adı veya şifre!"); }
-        }
-    }
-
-    // Mesajlaşma Sistemi (Daha önceki stabil versiyon)
-    async function send() {
-        const i = document.getElementById('msg');
-        const t = i.value.trim();
-        if(!t) return;
-        i.value = "";
-
-        await db.collection("messages").add({
-            role: "user",
-            content: t,
-            timestamp: firebase.firestore.FieldValue.serverTimestamp()
         });
-
-        const res = await fetch("https://api.groq.com/openai/v1/chat/completions", {
-            method: "POST",
-            headers: { "Authorization": `Bearer ${GROQ_KEY}`, "Content-Type": "application/json" },
-            body: JSON.stringify({
-                model: "llama-3.3-70b-versatile",
-                messages: [{role: "system", content: "Samimi bir asistan ol."}, {role: "user", content: t}]
-            })
-        });
-        const data = await res.json();
-        if(data.choices) {
-            await db.collection("messages").add({
-                role: "assistant",
-                content: data.choices[0].message.content,
-                timestamp: firebase.firestore.FieldValue.serverTimestamp()
-            });
-        }
-    }
-
-    // ... (Oturum takibi ve mesaj yükleme fonksiyonları aynı kalacak)
-</script>
+    </script>
+</body>
+</html>
