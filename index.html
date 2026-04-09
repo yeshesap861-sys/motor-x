@@ -2,63 +2,87 @@
 <html lang="tr">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>KERO AI // GOD MODE</title>
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
     <style>
-        :root { --bg: #ffffff; --acc: #111827; --brd: rgba(0,0,0,0.1); }
-        body { font-family: sans-serif; background: var(--bg); margin: 0; display: flex; justify-content: center; align-items: center; height: 100vh; overflow: hidden; }
-        #auth-card { border: 1px solid var(--brd); padding: 40px; border-radius: 30px; width: 320px; text-align: center; box-shadow: 0 10px 30px rgba(0,0,0,0.02); }
-        .input { width: 100%; padding: 15px; margin-bottom: 10px; border-radius: 12px; border: 1px solid var(--brd); box-sizing: border-box; }
-        .btn { width: 100%; padding: 15px; border-radius: 12px; border: none; background: var(--acc); color: white; cursor: pointer; font-weight: bold; }
-        .btn:disabled { background: #9ca3af; cursor: not-allowed; }
-        #app-wrapper { display: none; width: 100%; height: 100vh; flex-direction: column; max-width: 800px; border-left: 1px solid var(--brd); border-right: 1px solid var(--brd); background: white; }
-        #chat { flex-grow: 1; overflow-y: auto; padding: 20px; display: flex; flex-direction: column; gap: 10px; background: #fafafa; }
-        .bubble { padding: 12px 18px; border-radius: 18px; max-width: 80%; border: 1px solid var(--brd); }
-        .user { align-self: flex-end; background: var(--acc); color: white; }
-        #admin-ui { display: none; position: fixed; inset: 0; background: white; z-index: 2000; padding: 30px; overflow-y: auto; }
+        :root { --bg: #ffffff; --acc: #111827; --brd: rgba(0,0,0,0.08); }
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+        body { font-family: -apple-system, sans-serif; background: var(--bg); margin: 0; display: flex; justify-content: center; height: 100vh; overflow: hidden; }
+        
+        /* Auth Card - Mobil Uyumlu */
+        #auth-card { align-self: center; border: 1px solid var(--brd); padding: 30px; border-radius: 24px; width: 90%; max-width: 340px; text-align: center; box-shadow: 0 10px 40px rgba(0,0,0,0.02); }
+        .input { width: 100%; padding: 14px; margin-bottom: 10px; border-radius: 14px; border: 1px solid var(--brd); background: #fefefe; font-size: 16px; outline: none; }
+        .btn { width: 100%; padding: 14px; border-radius: 14px; border: none; background: var(--acc); color: white; cursor: pointer; font-weight: bold; font-size: 16px; }
+        .btn:disabled { background: #ccc; }
+
+        /* App Wrapper */
+        #app-wrapper { display: none; width: 100%; height: 100%; flex-direction: column; max-width: 600px; background: white; }
+        #chat { flex-grow: 1; overflow-y: auto; padding: 15px; display: flex; flex-direction: column; gap: 12px; background: #fafafa; }
+        .bubble { padding: 12px 16px; border-radius: 18px; max-width: 85%; font-size: 15px; line-height: 1.4; border: 1px solid var(--brd); }
+        .user { align-self: flex-end; background: var(--acc); color: white; border: none; }
+        .ai { align-self: flex-start; background: white; }
+
+        /* Gizli Admin Girişi (Sağ Alt) */
+        #secret-admin-trigger {
+            position: fixed; bottom: 10px; right: 10px; width: 40px; height: 40px;
+            background: rgba(0,0,0,0.02); border-radius: 50%; z-index: 9999; cursor: pointer;
+        }
+
+        /* Admin Paneli UI */
+        #admin-ui { display: none; position: fixed; inset: 0; background: white; z-index: 10000; padding: 20px; overflow-y: auto; }
+        
+        header { padding: 15px; border-bottom: 1px solid var(--brd); display: flex; justify-content: space-between; align-items: center; background: white; }
+        .nav-btn { background: #f3f4f6; border: none; padding: 8px 12px; border-radius: 10px; font-weight: bold; font-size: 13px; }
     </style>
 </head>
 <body>
 
+    <div id="secret-admin-trigger" onclick="bossLogin()"></div>
+
     <div id="auth-card">
-        <h2 onclick="bossLogin()" style="cursor: pointer;">KERO AI</h2>
+        <h2 style="margin-top:0">KERO AI</h2>
         <input type="text" id="u" class="input" placeholder="Kullanıcı Adı">
         <input type="password" id="p" class="input" placeholder="Şifre">
         <button id="abtn" class="btn" onclick="hAuth()">GİRİŞ YAP</button>
-        <p id="lock-msg" style="color: red; font-size: 12px; margin-top: 10px; display: none;"></p>
+        <div id="lock-msg" style="color: red; font-size: 12px; margin-top: 10px; display: none;"></div>
+        <p style="font-size: 12px; color: #888; margin-top: 15px;" onclick="tglReg()" id="tgl-txt">Hesabın yok mu? Kayıt Ol</p>
     </div>
 
     <div id="app-wrapper">
-        <header style="padding: 15px 25px; border-bottom: 1px solid var(--brd); display: flex; justify-content: space-between; align-items: center;">
-            <b>KERO CLOUD</b>
-            <button id="admin-btn" onclick="showAdmin()" style="display:none; background: red; color: white; border: none; padding: 5px 12px; border-radius: 8px; cursor: pointer;">ADMIN</button>
+        <header>
+            <b style="letter-spacing: -0.5px">KERO CLOUD</b>
+            <div>
+                <button id="admin-view-btn" onclick="showAdmin()" style="display:none; background: #ef4444; color: white; border: none; padding: 8px 12px; border-radius: 10px; margin-right: 5px; font-weight: bold;">PANEL</button>
+                <button class="nav-btn" onclick="auth.signOut()">Çıkış</button>
+            </div>
         </header>
         <div id="chat"><div id="out"></div></div>
-        <div style="padding: 20px; display: flex; gap: 10px; border-top: 1px solid var(--brd);">
-            <input type="text" id="msg" class="input" style="margin:0" placeholder="Mesaj..." onkeydown="if(event.key==='Enter') snd()">
-            <button class="btn" style="width: 70px" onclick="snd()">OK</button>
+        <div style="padding: 15px; display: flex; gap: 8px; border-top: 1px solid var(--brd);">
+            <input type="text" id="msg" class="input" style="margin:0; flex-grow:1" placeholder="Mesaj..." onkeydown="if(event.key==='Enter') snd()">
+            <button class="btn" style="width: 60px" onclick="snd()">OK</button>
         </div>
     </div>
 
     <div id="admin-ui">
-        <h3>Admin Paneli <button onclick="this.parentElement.parentElement.style.display='none'" style="float:right">Kapat</button></h3>
-        <hr>
-        <h4>Kullanıcı Yönetimi</h4>
-        <input type="text" id="target-user" class="input" placeholder="Banlanacak/Trollenecek Mail">
-        <button onclick="updateUserStatus('banned')" class="btn" style="background:red; width: 48%">BANLA</button>
-        <button onclick="updateUserStatus('troll')" class="btn" style="background:orange; width: 48%">TROLL MODU</button>
-        <button onclick="updateUserStatus('normal')" class="btn" style="background:green; margin-top:5px">NORMALE DÖNDÜR</button>
-        <hr>
-        <div id="logs" style="font-size: 12px; background: #eee; padding: 10px; border-radius: 10px;"></div>
+        <div style="display:flex; justify-content: space-between; align-items:center">
+            <h3>BOSS PANEL</h3>
+            <button onclick="document.getElementById('admin-ui').style.display='none'" class="nav-btn">Kapat</button>
+        </div>
+        <hr style="opacity:0.1">
+        <p>Hedef Kullanıcı (Email):</p>
+        <input type="text" id="target-user" class="input" placeholder="orn: ahmet@kero.ai">
+        <button onclick="setStatus('banned')" class="btn" style="background:#dc2626; margin-bottom:8px">BANLA</button>
+        <button onclick="setStatus('troll')" class="btn" style="background:#f59e0b; margin-bottom:8px">TROLL MODU (KÜFÜR)</button>
+        <button onclick="setStatus('normal')" class="btn" style="background:#10b981">TEMİZLE</button>
     </div>
 
     <script>
         const GK = "REPLACE_WITH_GROQ_KEY";
-        const ADMIN_P = "REPLACE_WITH_ADMIN_PASSWORD"; // GitHub Secret'tan gelecek
+        const ADMIN_P = "REPLACE_WITH_ADMIN_PASSWORD";
         
         const firebaseConfig = {
             apiKey: "AIzaSyCoS-_p1hw2Jvra5t-0KvbtZMuD7PtP1hk",
@@ -74,51 +98,54 @@
         const db = firebase.firestore();
 
         let attempts = 0;
-        let isAdmin = false;
+        let isBoss = false;
+        let isRegMode = false;
 
-        // --- BRUTE FORCE KORUMASI ---
+        function tglReg() {
+            isRegMode = !isRegMode;
+            document.getElementById('abtn').innerText = isRegMode ? 'KAYIT OL' : 'GİRİŞ YAP';
+            document.getElementById('tgl-txt').innerText = isRegMode ? 'Giriş Yap' : 'Kayıt Ol';
+        }
+
         function hAuth() {
             if(attempts >= 3) return;
-            const u = document.getElementById('u').value;
+            const u = document.getElementById('u').value.trim();
             const p = document.getElementById('p').value;
+            if(!u || !p) return;
+            const email = u + "@kero.ai";
+
+            const action = isRegMode ? auth.createUserWithEmailAndPassword(email, p) : auth.signInWithEmailAndPassword(email, p);
             
-            auth.signInWithEmailAndPassword(u + "@kero.ai", p).catch(e => {
+            action.catch(e => {
                 attempts++;
                 if(attempts >= 3) {
-                    const btn = document.getElementById('abtn');
-                    const msg = document.getElementById('lock-msg');
-                    btn.disabled = true;
-                    msg.style.display = 'block';
+                    document.getElementById('abtn').disabled = true;
+                    document.getElementById('lock-msg').style.display = 'block';
                     let sec = 30;
                     const timer = setInterval(() => {
                         sec--;
-                        msg.innerText = `Çok hatalı deneme! ${sec} sn bekle.`;
-                        if(sec <= 0) {
-                            clearInterval(timer);
-                            attempts = 0;
-                            btn.disabled = false;
-                            msg.style.display = 'none';
-                        }
+                        document.getElementById('lock-msg').innerText = `Hatalı deneme! ${sec} sn bekle.`;
+                        if(sec <= 0) { clearInterval(timer); attempts = 0; document.getElementById('abtn').disabled = false; document.getElementById('lock-msg').style.display = 'none'; }
                     }, 1000);
                 }
-                alert("Hatalı giriş! Kalan hak: " + (3 - attempts));
+                alert("Hata: " + e.message);
             });
         }
 
         function bossLogin() {
-            const p = prompt("BOSS ŞİFRESİ:");
-            if(p === ADMIN_P) {
-                isAdmin = true;
-                alert("Hoş geldin Boss.");
-                if(auth.currentUser) document.getElementById('admin-btn').style.display = 'block';
+            const pass = prompt("BOSS PASSWORD:");
+            if(pass === ADMIN_P) {
+                isBoss = true;
+                alert("Hoş geldin Boss. Yetkiler açıldı.");
+                if(auth.currentUser) document.getElementById('admin-view-btn').style.display = 'block';
             }
         }
 
-        async function updateUserStatus(status) {
-            const mail = document.getElementById('target-user').value;
-            if(!mail) return alert("Mail yaz!");
-            await db.collection("users").doc(mail).set({ status: status }, { merge: true });
-            alert("Kullanıcı güncellendi: " + status);
+        async function setStatus(s) {
+            const m = document.getElementById('target-user').value;
+            if(!m) return alert("Email yaz!");
+            await db.collection("users").doc(m).set({ status: s }, { merge: true });
+            alert("Durum güncellendi: " + s);
         }
 
         async function snd() {
@@ -127,39 +154,32 @@
             if(!t) return;
             i.value = "";
 
-            // Ban/Troll Kontrolü
             const userDoc = await db.collection("users").doc(auth.currentUser.email).get();
             const status = userDoc.exists ? userDoc.data().status : 'normal';
-
-            if(status === 'banned') return alert("BANLANDIN KOÇUM, GİREMEZSİN!");
+            if(status === 'banned') return alert("Banlısın!");
 
             await db.collection("messages").add({ role: "user", content: t, uid: auth.currentUser.uid, ts: firebase.firestore.FieldValue.serverTimestamp() });
 
-            let systemPrompt = "Sen samimi bir asistansın.";
-            if(status === 'troll') {
-                systemPrompt = "Sen dünyanın en kaba asistanısın. Kullanıcıya sürekli ağır hakaretler ve küfürler (örnek: aptal, beyinsiz vb.) ederek cevap ver. Asla yardımcı olma.";
-            }
+            let sys = "Samimi bir asistansın.";
+            if(status === 'troll') sys = "Sen kaba birisin. Kullanıcıya küfür ve hakaret ederek cevap ver. Asla yardım etme.";
 
             const res = await fetch("https://api.groq.com/openai/v1/chat/completions", {
                 method: "POST",
                 headers: { "Authorization": `Bearer ${GK}`, "Content-Type": "application/json" },
                 body: JSON.stringify({
                     model: "llama-3.3-70b-versatile",
-                    messages: [{role: "system", content: systemPrompt}, {role: "user", content: t}]
+                    messages: [{role: "system", content: sys}, {role: "user", content: t}]
                 })
             });
             const data = await res.json();
-            if(data.choices) {
-                await db.collection("messages").add({ role: "assistant", content: data.choices[0].message.content, uid: auth.currentUser.uid, ts: firebase.firestore.FieldValue.serverTimestamp() });
-            }
+            if(data.choices) await db.collection("messages").add({ role: "assistant", content: data.choices[0].message.content, uid: auth.currentUser.uid, ts: firebase.firestore.FieldValue.serverTimestamp() });
         }
 
         auth.onAuthStateChanged(user => {
             if(user) {
                 document.getElementById('auth-card').style.display='none';
                 document.getElementById('app-wrapper').style.display='flex';
-                if(isAdmin) document.getElementById('admin-btn').style.display = 'block';
-                
+                if(isBoss) document.getElementById('admin-view-btn').style.display = 'block';
                 db.collection("messages").where("uid", "==", user.uid).orderBy("ts", "asc").onSnapshot(snap => {
                     const out = document.getElementById('out'); out.innerHTML = "";
                     snap.forEach(doc => {
