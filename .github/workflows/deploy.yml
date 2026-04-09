@@ -1,0 +1,24 @@
+name: Deploy to GitHub Pages
+
+on:
+  push:
+    branches:
+      - main  # Senin ana dalın hangisiyse (main veya master)
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v3
+
+      - name: Inject API Key
+        run: |
+          # index.html içindeki REPLACE_WITH_GROQ_KEY yazısını secret ile değiştirir
+          sed -i "s/REPLACE_WITH_GROQ_KEY/${{ secrets.GROQ_API_KEY }}/g" index.html
+
+      - name: Deploy
+        uses: peaceiris/actions-gh-pages@v3
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: .
