@@ -3,86 +3,82 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>KERO AI // Cloud</title>
+    <title>KERO AI // Final</title>
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore-compat.js"></script>
     <style>
-        :root { --bg: #fdfdfd; --acc: #111827; --brd: rgba(0,0,0,0.08); }
+        :root { --bg: #ffffff; --acc: #111827; --brd: rgba(0,0,0,0.1); }
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-        body { font-family: -apple-system, sans-serif; background: var(--bg); margin: 0; display: flex; justify-content: center; height: 100vh; overflow: hidden; }
+        body { font-family: -apple-system, system-ui, sans-serif; background: var(--bg); margin: 0; display: flex; justify-content: center; height: 100vh; overflow: hidden; }
         
-        /* Login Card */
-        #auth-card { align-self: center; border: 1px solid var(--brd); padding: 35px; border-radius: 28px; width: 90%; max-width: 350px; text-align: center; background: white; box-shadow: 0 10px 40px rgba(0,0,0,0.02); }
-        .input { width: 100%; padding: 15px; margin-bottom: 12px; border-radius: 15px; border: 1px solid var(--brd); background: #fafafa; font-size: 16px; outline: none; transition: 0.3s; }
-        .input:focus { border-color: var(--acc); background: white; }
-        .btn { width: 100%; padding: 15px; border-radius: 15px; border: none; background: var(--acc); color: white; cursor: pointer; font-weight: 700; font-size: 16px; }
+        /* Auth Screen */
+        #auth-card { align-self: center; padding: 40px; border-radius: 30px; width: 90%; max-width: 360px; text-align: center; border: 1px solid var(--brd); background: white; box-shadow: 0 10px 40px rgba(0,0,0,0.02); }
+        .input { width: 100%; padding: 15px; margin-bottom: 10px; border-radius: 15px; border: 1px solid var(--brd); background: #fafafa; font-size: 16px; outline: none; }
+        .btn { width: 100%; padding: 15px; border-radius: 15px; border: none; background: var(--acc); color: white; cursor: pointer; font-weight: bold; font-size: 16px; }
         .btn:disabled { background: #ccc; }
 
-        /* Main App */
-        #app-wrapper { display: none; width: 100%; height: 100%; flex-direction: column; max-width: 700px; background: white; border-left: 1px solid var(--brd); border-right: 1px solid var(--brd); }
-        header { padding: 18px 25px; border-bottom: 1px solid var(--brd); display: flex; justify-content: space-between; align-items: center; }
-        #chat { flex-grow: 1; overflow-y: auto; padding: 20px; display: flex; flex-direction: column; gap: 12px; background: #f9f9f9; }
-        .bubble { padding: 14px 18px; border-radius: 20px; max-width: 85%; font-size: 15px; line-height: 1.5; border: 1px solid var(--brd); position: relative; }
-        .user { align-self: flex-end; background: var(--acc); color: white; border: none; border-bottom-right-radius: 4px; }
+        /* App Wrapper */
+        #app-wrapper { display: none; width: 100%; height: 100%; flex-direction: column; max-width: 800px; background: white; border-left: 1px solid var(--brd); border-right: 1px solid var(--brd); }
+        header { padding: 15px 20px; border-bottom: 1px solid var(--brd); display: flex; justify-content: space-between; align-items: center; }
+        #chat { flex-grow: 1; overflow-y: auto; padding: 20px; display: flex; flex-direction: column; gap: 15px; background: #fcfcfc; }
+        .bubble { padding: 12px 18px; border-radius: 20px; max-width: 85%; font-size: 15px; line-height: 1.5; border: 1px solid var(--brd); }
+        .user { align-self: flex-end; background: var(--acc); color: white; border-bottom-right-radius: 4px; border: none; }
         .ai { align-self: flex-start; background: white; border-bottom-left-radius: 4px; }
 
-        /* Gizli Admin Girişi (Sağ Alt - Çok Şeffaf) */
-        #admin-trigger { position: fixed; bottom: 5px; right: 5px; width: 30px; height: 30px; background: rgba(0,0,0,0.01); border-radius: 50%; z-index: 9999; cursor: pointer; }
+        /* Secret Admin (Sağ Alt Köşe - Görünmez) */
+        #secret-boss { position: fixed; bottom: 0; right: 0; width: 40px; height: 40px; z-index: 9999; cursor: pointer; }
 
         /* Admin UI */
-        #admin-ui { display: none; position: fixed; inset: 0; background: white; z-index: 10000; padding: 30px; overflow-y: auto; }
-        .admin-btn { padding: 12px; border-radius: 12px; border: none; font-weight: bold; cursor: pointer; color: white; width: 100%; margin-bottom: 10px; }
+        #admin-panel { display: none; position: fixed; inset: 0; background: white; z-index: 10000; padding: 30px; overflow-y: auto; }
+        .adm-btn { width: 100%; padding: 15px; margin-bottom: 10px; border-radius: 12px; border: none; color: white; font-weight: bold; cursor: pointer; }
     </style>
 </head>
 <body>
 
-    <div id="admin-trigger" onclick="bossKey()"></div>
+    <div id="secret-boss" onclick="bossCheck()"></div>
 
     <div id="auth-card">
-        <h2 style="margin: 0 0 10px 0; font-weight: 800;">KERO AI</h2>
-        <p style="font-size: 12px; color: #888; margin-bottom: 25px;">BEYAZ BULUT v23.0</p>
+        <h1 style="margin:0 0 10px 0; font-weight: 900;">KERO AI</h1>
+        <p style="color: #888; font-size: 12px; margin-bottom: 30px;">FULL UNLEASHED v24.0</p>
         <input type="text" id="u" class="input" placeholder="Kullanıcı Adı">
         <input type="password" id="p" class="input" placeholder="Şifre">
-        <button id="abtn" class="btn" onclick="hAuth()">GİRİŞ YAP</button>
-        <div id="lock-msg" style="color: #ef4444; font-size: 12px; margin-top: 10px; display: none; font-weight: bold;"></div>
-        <p style="font-size: 13px; color: #555; margin-top: 20px; cursor: pointer; font-weight: 600;" onclick="tglReg()" id="tgl-txt">Hesabın yok mu? Kayıt Ol</p>
+        <button id="abtn" class="btn" onclick="handleAuth()">GİRİŞ YAP / KAYIT OL</button>
+        <div id="lock-timer" style="color: red; font-size: 12px; margin-top: 10px; display: none;"></div>
     </div>
 
     <div id="app-wrapper">
         <header>
-            <b style="font-size: 20px; letter-spacing: -0.5px;">KERO CLOUD</b>
+            <b style="font-size: 20px;">KERO CLOUD</b>
             <div>
-                <button id="panel-btn" onclick="showAdmin()" style="display:none; background: #ef4444; color: white; border: none; padding: 8px 12px; border-radius: 10px; margin-right: 5px; font-weight: bold; font-size: 12px; cursor:pointer;">PANEL</button>
-                <button onclick="auth.signOut()" style="background: #f3f4f6; border: none; padding: 8px 15px; border-radius: 10px; font-weight: bold; cursor:pointer; font-size: 12px;">Çıkış</button>
+                <button id="adm-nav" onclick="showAdmin()" style="display:none; background:red; color:white; border:none; padding:8px 12px; border-radius:10px; font-weight:bold; cursor:pointer;">ADMIN</button>
+                <button onclick="auth.signOut()" style="background:#eee; border:none; padding:8px 12px; border-radius:10px; cursor:pointer;">Çıkış</button>
             </div>
         </header>
         <div id="chat"><div id="out"></div></div>
-        <div style="padding: 15px; display: flex; gap: 10px; border-top: 1px solid var(--brd); background: white;">
-            <input type="text" id="msg" class="input" style="margin:0; flex-grow:1" placeholder="Bir şeyler yaz..." onkeydown="if(event.key==='Enter') snd()">
-            <button class="btn" style="width: 60px" onclick="snd()">OK</button>
+        <div style="padding: 15px; display: flex; gap: 10px; border-top: 1px solid var(--brd);">
+            <input type="text" id="m" class="input" style="margin:0; flex-grow:1" placeholder="Mesajını yaz..." onkeydown="if(event.key==='Enter') send()">
+            <button class="btn" style="width: 70px" onclick="send()">GÖNDER</button>
         </div>
     </div>
 
-    <div id="admin-ui">
-        <div style="display:flex; justify-content: space-between; align-items:center; margin-bottom: 20px;">
-            <h2 style="margin:0">BOSS KONTROL</h2>
-            <button onclick="document.getElementById('admin-ui').style.display='none'" style="background:#eee; border:none; padding:10px 15px; border-radius:10px; font-weight:bold;">Kapat</button>
+    <div id="admin-panel">
+        <div style="display:flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+            <h2>BOSS PANEL</h2>
+            <button onclick="document.getElementById('admin-panel').style.display='none'" class="btn" style="width:80px">Kapat</button>
         </div>
-        <p style="font-size: 14px; font-weight: bold;">Kullanıcı Maili (örnek: ahmet@kero.ai):</p>
-        <input type="text" id="target" class="input" placeholder="Mail adresi...">
-        <button onclick="setStatus('banned')" class="admin-btn" style="background:#ef4444">BANLA (GİRİŞİ KAPAT)</button>
-        <button onclick="setStatus('troll')" class="admin-btn" style="background:#f59e0b">TROLL MODU (KÜFÜR ET)</button>
-        <button onclick="setStatus('normal')" class="admin-btn" style="background:#10b981">NORMALE DÖNDÜR</button>
-        <div id="admin-info" style="margin-top:20px; font-size:12px; color:#888;"></div>
+        <input type="text" id="target" class="input" placeholder="Kullanıcı Maili (örn: ahmet@kero.ai)">
+        <button onclick="setU('banned')" class="adm-btn" style="background:#ef4444">BANLA</button>
+        <button onclick="setU('troll')" class="adm-btn" style="background:#f59e0b">TROLL MODU (KÜFÜR)</button>
+        <button onclick="setU('normal')" class="adm-btn" style="background:#10b981">TEMİZLE</button>
     </div>
 
     <script>
-        // --- AYARLAR ---
-        const GK = "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";
-        const ADMIN_PASS = "kero123"; // Buraya istediğin admin şifresini yaz aga
-
+        // --- CONFIG ---
+        const GROQ_KEY = "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";
+        const ADMIN_PWD = "kero123"; // Admin girişi için şifren
+        
         const firebaseConfig = {
             apiKey: "AIzaSyCoS-_p1hw2Jvra5t-0KvbtZMuD7PtP1hk",
             authDomain: "kero-ai.firebaseapp.com",
@@ -98,81 +94,85 @@
 
         let attempts = 0;
         let isBoss = false;
-        let isReg = false;
 
-        function tglReg() {
-            isReg = !isReg;
-            document.getElementById('abtn').innerText = isReg ? 'KAYIT OL' : 'GİRİŞ YAP';
-            document.getElementById('tgl-txt').innerText = isReg ? 'Zaten hesabın var mı? Giriş Yap' : 'Hesabın yok mu? Kayıt Ol';
-        }
-
-        function hAuth() {
+        // Brute Force & Auth
+        async function handleAuth() {
             if(attempts >= 3) return;
             const u = document.getElementById('u').value.trim();
             const p = document.getElementById('p').value;
-            if(!u || !p) return;
+            if(!u || !p) return alert("Boş bırakma!");
             const email = u + "@kero.ai";
 
-            const action = isReg ? auth.createUserWithEmailAndPassword(email, p) : auth.signInWithEmailAndPassword(email, p);
-            
-            action.catch(e => {
-                attempts++;
-                if(attempts >= 3) {
-                    document.getElementById('abtn').disabled = true;
-                    document.getElementById('lock-msg').style.display = 'block';
-                    let sec = 30;
-                    const timer = setInterval(() => {
-                        sec--;
-                        document.getElementById('lock-msg').innerText = `Çok hatalı deneme! ${sec} sn bekle.`;
-                        if(sec <= 0) { clearInterval(timer); attempts = 0; document.getElementById('abtn').disabled = false; document.getElementById('lock-msg').style.display = 'none'; }
-                    }, 1000);
+            try {
+                // Hem giriş hem kayıt denemesi (Kullanıcı yoksa oluşturur)
+                try {
+                    await auth.signInWithEmailAndPassword(email, p);
+                } catch(e) {
+                    if(e.code === 'auth/user-not-found') await auth.createUserWithEmailAndPassword(email, p);
+                    else throw e;
                 }
-                alert(e.message);
-            });
-        }
-
-        function bossKey() {
-            const pass = prompt("BOSS ŞİFRESİ:");
-            if(pass === ADMIN_PASS) {
-                isBoss = true;
-                alert("Hoş geldin Boss. Panel yetkileri açıldı.");
-                if(auth.currentUser) document.getElementById('panel-btn').style.display = 'block';
+            } catch(e) {
+                attempts++;
+                if(attempts >= 3) lockAuth();
+                alert("Hata: " + e.message);
             }
         }
 
-        async function setStatus(s) {
-            const m = document.getElementById('target').value.trim();
-            if(!m) return alert("Mail yaz!");
-            await db.collection("users").doc(m).set({ status: s }, { merge: true });
-            alert("Kullanıcı durumu güncellendi: " + s);
+        function lockAuth() {
+            const btn = document.getElementById('abtn');
+            const msg = document.getElementById('lock-timer');
+            btn.disabled = true; msg.style.display = 'block';
+            let s = 30;
+            const t = setInterval(() => {
+                s--; msg.innerText = `3 Hatalı Deneme! ${s}sn bekle.`;
+                if(s <= 0) { clearInterval(t); btn.disabled = false; msg.style.display = 'none'; attempts = 0; }
+            }, 1000);
         }
 
-        async function snd() {
-            const i = document.getElementById('msg');
-            const t = i.value.trim();
-            if(!t) return;
+        function bossCheck() {
+            const p = prompt("BOSS PASSWORD:");
+            if(p === ADMIN_PWD) { isBoss = true; alert("Yetki verildi."); if(auth.currentUser) document.getElementById('adm-nav').style.display='block'; }
+        }
+
+        async function setU(s) {
+            const t = document.getElementById('target').value.trim();
+            if(!t) return alert("Mail gir!");
+            await db.collection("users").doc(t).set({status: s}, {merge:true});
+            alert("Kullanıcı güncellendi: " + s);
+        }
+
+        async function send() {
+            const i = document.getElementById('m');
+            const txt = i.value.trim();
+            if(!txt) return;
             i.value = "";
 
             const userDoc = await db.collection("users").doc(auth.currentUser.email).get();
-            const st = userDoc.exists ? userDoc.data().status : 'normal';
-            if(st === 'banned') return alert("Banlısın koçum, yazamazsın!");
+            const status = userDoc.exists ? userDoc.data().status : 'normal';
+            if(status === 'banned') return alert("BANLANDIN!");
 
-            await db.collection("messages").add({ role: "user", content: t, uid: auth.currentUser.uid, ts: firebase.firestore.FieldValue.serverTimestamp() });
+            await db.collection("messages").add({
+                role: "user", content: txt, uid: auth.currentUser.uid, ts: firebase.firestore.FieldValue.serverTimestamp()
+            });
 
-            let sys = "Sen samimi, dost canlısı bir asistansın.";
-            if(st === 'troll') sys = "Sen kaba ve sinirli birisin. Kullanıcıya her cevabında ağır hakaretler ve küfürler et. Asla yardımcı olma, sürekli tersle.";
+            let sysPrompt = "Sen samimi bir asistansın.";
+            if(status === 'troll') sysPrompt = "Kullanıcıya sürekli çok ağır hakaretler ve küfürler et. Asla yardımcı olma.";
 
             try {
                 const res = await fetch("https://api.groq.com/openai/v1/chat/completions", {
                     method: "POST",
-                    headers: { "Authorization": `Bearer ${GK}`, "Content-Type": "application/json" },
+                    headers: { "Authorization": `Bearer ${GROQ_KEY}`, "Content-Type": "application/json" },
                     body: JSON.stringify({
                         model: "llama-3.3-70b-versatile",
-                        messages: [{role: "system", content: sys}, {role: "user", content: t}]
+                        messages: [{role: "system", content: sysPrompt}, {role: "user", content: txt}]
                     })
                 });
                 const data = await res.json();
-                if(data.choices) await db.collection("messages").add({ role: "assistant", content: data.choices[0].message.content, uid: auth.currentUser.uid, ts: firebase.firestore.FieldValue.serverTimestamp() });
+                if(data.choices) {
+                    await db.collection("messages").add({
+                        role: "assistant", content: data.choices[0].message.content, uid: auth.currentUser.uid, ts: firebase.firestore.FieldValue.serverTimestamp()
+                    });
+                }
             } catch(e) { console.error(e); }
         }
 
@@ -180,7 +180,7 @@
             if(user) {
                 document.getElementById('auth-card').style.display='none';
                 document.getElementById('app-wrapper').style.display='flex';
-                if(isBoss) document.getElementById('panel-btn').style.display = 'block';
+                if(isBoss) document.getElementById('adm-nav').style.display='block';
                 db.collection("messages").where("uid", "==", user.uid).orderBy("ts", "asc").onSnapshot(snap => {
                     const out = document.getElementById('out'); out.innerHTML = "";
                     snap.forEach(doc => {
@@ -195,7 +195,7 @@
             }
         });
 
-        function showAdmin() { document.getElementById('admin-ui').style.display = 'block'; }
+        function showAdmin() { document.getElementById('admin-panel').style.display='block'; }
     </script>
 </body>
 </html>
